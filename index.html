@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - multiple elements</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			* {
+				box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+
+			body {
+				color: #000;
+				font-family:Monospace;
+				font-size:13px;
+
+				background-color: #fff;
+				margin: 0px;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+				text-align:center;
+			}
+			#content
+			{
+				overflow: hidden;
+				position: absolute;
+				top: 0px; width: 100% ;height: 100%;
+				z-index: 1;
+				padding: 0 0 0 0;
+			
+			}
+			#content1 {
+				overflow: hidden;
+				position: absolute;
+				top: 0px; width: 45% ;height: 100%;
+				z-index: 1;
+				padding: 0 0 0 0;
+				float: left;
+			}
+			#content2 {
+				overflow: hidden;
+				position: absolute;
+				left: 45%;
+				top: 0%; width: 45% ;height: 100%;
+				z-index: 1;
+				padding: 0 0 0 0;
+				float: right
+			}
+
+			a {
+				color: #0080ff;
+			}
+
+			#c {
+				position: fixed;
+				left: 0px;
+				width: 100%;
+				height: 100%;
+			}
+
+			.list-item-right {
+				
+				margin: 1em;
+				padding: 1em;
+				width: 95%;
+				height: 45%;
+				float: right;
+				box-shadow: 1px 2px 4px 0px rgba(0,0,0,0.25);
+			}
+
+			.list-item-left {
+				margin: 1em;
+				padding: 1em;
+				width: 95%;
+				height: 45%;
+				float: left;
+				box-shadow: 1px 2px 4px 0px rgba(0,0,0,0.25);
+			}
+
+			.list-item-left .scene {
+				width: 95%;
+				height: 95%;
+			}
+
+			.list-item-right .scene {
+				width: 95%;
+				height: 95%;
+			}
+
+
+
+			.list-item-left .description {
+				color: #888;
+				font-family: sans-serif;
+				font-size: large;
+				width: 100%;
+				
+				text-align:center;
+			}
+			.list-item-right .description {
+				color: #888;
+				font-family: sans-serif;
+				font-size: large;
+				
+				text-align:center;
+				width: 100%;
+				
+			}
+      
+      #ResetButton
+      {
+       
+        overflow: hidden;
+				top: 0%; width: 100% ;height: 10%;
+				z-index: 1;
+				padding: 0 0 0 0;
+				float: right
+      }
+      
+      #ToolBox
+      {
+				overflow: hidden;
+				position: absolute;
+				left: 90%;
+				top: 0%; width: 10% ;height: 100%;
+				z-index: 2;
+				padding: 0 0 0 0;
+				float: right
+      }
+      
+		</style>
+	</head>
+	<body>
+
+		<canvas id="c"></canvas>
+		<div id= "content">
+		<div id="content1">
+		</div>
+		<div id="content2">
+		</div>
+    <div id ="ToolBox">
+      <button id ="ResetButton"  onclick="Reset()">Reset</button>
+      <button id ="ResetButton"  onclick="Wireframe()">Wireframe</button>
+      </div>
+		</div>
+		<script src="js/three.min.js"></script>
+		
+		<script src="js/tween.min.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		
+		<script src="js/JDLoader.min.js"></script>
+		<script src="js/Detector.js"></script>
+
+		<script id="template" type="notjs">
+			<div class="scene"></div>
+			<div class="description">$</div>
+		</script>
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var canvas;
+
+			var scenes = [];
+			var renderer;
+      var controls;
+			mixers = [];
+			meshes = [];
+      wmeshes = [];
+			groups = [];
+			states = [];
+      var wire = false;
+			var defrot;
+			var clock = new THREE.Clock;
+			init();
+			animate();
+			
+			function init() {
+
+				canvas = document.getElementById( "c" );
+
+				var geometries = [
+					new THREE.BoxGeometry( 1, 1, 1 ),
+					new THREE.SphereGeometry( 0.5, 12, 8 ),
+					new THREE.DodecahedronGeometry( 0.5 ),
+					new THREE.CylinderGeometry( 0.5, 0.5, 1, 12 )
+				];
+
+				var template = document.getElementById( "template" ).text;
+				var content1 = document.getElementById( "content1" );
+				var content2 = document.getElementById( "content2" );
+				
+				var loader = new THREE.JDLoader();
+				for ( var i =  0; i < 4; i ++ ) 
+				{
+
+					var scene = new THREE.Scene();
+					// make a list item
+					var element = document.createElement( "div" );
+					if(i < 2)
+					{
+						if(i == 0)
+						{
+							element.className = "list-item-left";
+						
+							content1.appendChild( element );
+							
+							element.innerHTML = template.replace( '$', "BOTTOM(Top)" );
+						}
+						else if(i == 1)
+						{
+							element.className = "list-item-right";
+						
+							content2.appendChild( element );
+							element.innerHTML = template.replace( '$', "RESET" );
+						}
+						}
+						else
+						{
+						if(i == 2)
+						{
+							element.className = "list-item-left";
+						
+							content1.appendChild( element );
+							element.innerHTML = template.replace( '$', "BACK(Front)" );
+						}
+						else if(i == 3)
+						{
+							element.className = "list-item-right";
+						
+							content2.appendChild( element );
+							element.innerHTML = template.replace( '$', "RIGHT(End)" );
+						}
+					}
+					
+					element.float = i % 2 == 0 ? "left" :"right";
+					// Look up the element that represents the area
+					// we want to render the scene
+					scene.userData.element = element.querySelector( ".scene" );
+				
+
+					var camera = new THREE.PerspectiveCamera( 50, 1, 1, 10 );
+					camera.position.z = 2;
+					scene.userData.camera = camera;
+
+
+
+
+
+
+					// add one random mesh to each scene
+					var geometry = geometries[ geometries.length * Math.random() | 0 ];
+
+					var material = new THREE.MeshStandardMaterial( {
+
+						color: new THREE.Color().setHSL( Math.random(), 1, 0.75 ),
+						roughness: 0.5,
+						metalness: 0,
+						shading: THREE.FlatShading
+
+					} );
+
+					
+					
+
+							
+
+
+
+
+
+
+
+
+					//scene.add( new THREE.Mesh( geometry, material ) );
+
+					scene.add( new THREE.HemisphereLight( 0xaaaaaa, 0x444444 ) );
+
+					var light = new THREE.DirectionalLight( 0xffffff, 0.5 );
+					light.position.set( 1, 1, 1 );
+					scene.add( light );
+
+					scenes.push( scene );
+
+				}
+
+
+
+				loader.load("model/model0.jd",function(mydata)
+						{
+							for(var i = 0 ; i < 4; i++)
+							{
+							var multiMaterial = mydata.materials;
+							
+							var group = new THREE.Object3D();
+                            for (var j = 0; j < mydata.geometries.length; ++j)
+                            {
+                                var mesh = new THREE.SkinnedMesh(mydata.geometries[j], multiMaterial);
+                                var wgeo = new THREE.WireframeGeometry (mydata.geometries[j]);
+                                var mat = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 2 } );
+                                var wmesh = new THREE.LineSegments( wgeo, mat );
+                                wmesh.visible = false;
+                                group.add(mesh);
+                                group.add(wmesh);
+								                wmeshes.push(wmesh);
+								                meshes.push(mesh);
+                                //scenes[i].add(mesh);
+                                if (mesh.geometry.animations)
+                                {
+                                    var mixer = new THREE.AnimationMixer(mesh);
+                                    mixers.push(mixer);
+                                    mixer.clipAction(mesh.geometry.animations[0]).play();
+                                }
+                            }
+							//group.y -= 5000;
+							group.rotation.x = Math.PI /4;
+							group.rotation.y =  - Math.PI * 3 / 4;
+							
+							//.rotation.y += i * Math.PI / 4;
+							states.push(true);
+							groups.push(group);
+							
+							defrot = groups[0].rotation;
+							console.log("Number of meshes " +i + " " + j)
+							camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10 * mydata.boundingSphere.radius);
+                            camera.position.z = mydata.boundingSphere.center.z + 3 * mydata.boundingSphere.radius;
+							camera.position.y += mydata.boundingSphere.center.y ;
+                            camera.lookAt(mydata.boundingSphere.center);        
+							scenes[i].userData.camera = camera;
+							scenes[i].add(group);
+                            //scene.add(camera);  //mainLight.position.copy(camera.position);
+                            camera.add(new THREE.DirectionalLight(0xFFFFFF, 1));                            
+                           // if (!controls)
+                              // controls = new THREE.OrbitControls(camera, renderer.domElement);
+                            //controls.target.copy(mydata.boundingSphere.center);
+							//scenes[i].userData.controls = controls;
+
+
+							if(i == 1)
+              {
+                controls = new THREE.OrbitControls( scenes[i].userData.camera, scenes[i].userData.element );
+							  controls.minDistance = 200;
+							  controls.maxDistance = 250;
+							  controls.enablePan = false;
+							  controls.enableZoom = false;
+							  controls.enableRotate = true;
+							  scenes[i].userData.controls = controls;
+							}
+							}
+					
+						});
+
+
+				renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
+				renderer.setClearColor( 0xffffff, 1 );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				
+				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+				
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchstart', onDocumentMouseDown, false );
+			}
+
+			function updateSize() {
+
+				var width = canvas.clientWidth;
+				var height = canvas.clientHeight;
+
+				if ( canvas.width !== width || canvas.height != height ) {
+
+					renderer.setSize( width, height, false );
+
+				}
+
+			}
+
+
+			function animate()
+			{
+				var delta = clock.getDelta();
+				for (var i = 0; i < mixers.length; ++i)
+                mixers[i].update(delta);
+
+				if (controls) controls.update();
+
+				//if (camera)  renderer.render(scene, camera);
+
+				requestAnimationFrame(animate);
+			
+				render();
+			}
+
+			function render() {
+
+				updateSize();
+				TWEEN.update();
+				
+				for(i = 0; i < 4; i++)
+				{ 
+
+					if(states[i])
+					{
+					groups[i].rotation.x = Math.PI / 4;
+					groups[i].rotation.y = - Math.PI  * 3/ 4;
+					groups[i].rotation.z = 0;
+					
+					
+					}
+				}
+						
+				renderer.setClearColor( 0xffffff );
+				renderer.setScissorTest( false );
+				renderer.clear();
+
+				renderer.setClearColor( 0xe0e0e0 );
+				renderer.setScissorTest( true );
+				var temp = 0
+				scenes.forEach( function( scene ) {
+					
+						//console.log("Scene rendered " + temp);
+						temp++;
+					// so something moves
+					scene.children[0].rotation.y = Date.now() * 0.001;
+
+					// get the element that is a place holder for where we want to
+					// draw the scene
+					var element = scene.userData.element;
+
+					// get its position relative to the page's viewport
+					var rect = element.getBoundingClientRect();
+
+					// check if it's offscreen. If so skip it
+					if ( rect.bottom < 0 || rect.top  > renderer.domElement.clientHeight ||
+						 rect.right  < 0 || rect.left > renderer.domElement.clientWidth ) {
+						 
+						//console.log("something not rendered");
+						return;  // it's off screen
+						
+					}
+
+					// set the viewport
+					var width  = rect.right - rect.left;
+					var height = rect.bottom - rect.top;
+					var left   = rect.left;
+					var bottom = renderer.domElement.clientHeight - rect.bottom;
+
+					renderer.setViewport( left, bottom, width, height );
+					renderer.setScissor( left, bottom, width, height );
+
+					var camera = scene.userData.camera;
+
+					//camera.aspect = width / height; // not changing in this example
+					//camera.updateProjectionMatrix();
+					if(scene.userData.controls)
+					scene.userData.controls.update();
+
+					renderer.render( scene, camera );
+
+				} );
+
+			}
+
+      
+       function Reset()
+       {
+          for(i = 0; i < 4; i++)
+							{ 
+
+								//if(groups[i].rotation != defrot)
+								groups[i].rotation.x = Math.PI / 4;
+								groups[i].rotation.y = - Math.PI  * 3/ 4;
+								groups[i].rotation.z = 0;
+								//new TWEEN.Tween( groups[i].rotation ).to( defrot, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+								states[i] = true;
+							}
+              controls.reset();
+               
+       }
+       
+            function Wireframe()
+            {
+              wire = ! wire;
+              for(i = 0; i < meshes.length; i++)
+							{ 
+                console.log("wireframe");
+                meshes[i].visible  = !wire ;
+                wmeshes[i].visible  = wire ;
+								
+							}
+            
+            }
+               
+               
+			function onDocumentMouseDown( event )
+			{
+
+				//event.preventDefault();
+
+				for(i = 0; i < 4 ; i++)
+				{
+					
+					//console.log("Scene rendered " + temp);
+					//temp++;
+					// so something moves
+					//scenes[i].children[0].rotation.y = Date.now() * 0.001;
+
+					// get the element that is a place holder for where we want to
+					// draw the scene
+					var element = scenes[i].userData.element;
+
+					// get its position relative to the page's viewport
+					var rect = element.getBoundingClientRect();
+
+
+					if(event.clientX > rect.left && event.clientX < rect.left + rect.width && event.clientY > rect.top &&  event.clientY < rect.top + rect.height )
+					{
+						if(i == 1)
+						{
+            return;
+							
+						}
+						else if(states[i])
+						{
+							if(i == 0)
+							{
+							new TWEEN.Tween( groups[i].rotation ).to( {  x: Math.PI / 2, y:  - Math.PI / 2}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+							states[i] = false;
+							}
+							if(i == 2)
+							{
+							new TWEEN.Tween( groups[i].rotation ).to( {  x: 0, y:   -Math.PI / 2}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+							states[i] = false;
+							}
+							if(i == 3)
+							{
+							new TWEEN.Tween( groups[i].rotation ).to( {  x: 0, y:  - Math.PI}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+							states[i] = false;
+							}
+						}
+						else
+						{
+							if(i == 0)
+							{
+							new TWEEN.Tween( groups[i].rotation ).to( {  z: groups[i].rotation.z - Math.PI / 2  }, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+							states[i] = false;
+							}
+							if(i == 2)
+							{
+							new TWEEN.Tween( groups[i].rotation ).to( { y: groups[i].rotation.y + Math.PI / 2   }, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+							states[i] = false;
+							}
+							if(i == 3)
+							{
+							new TWEEN.Tween( groups[i].rotation ).to( {  y: groups[i].rotation.y - Math.PI / 2}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+							states[i] = false;
+							}
+						}
+						//new TWEEN.Tween( groups[i].rotation ).to( {  y:  groups[i].rotation.y + (Math.PI / 2)}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+					}
+				}
+
+
+				//document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				//document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+				//document.addEventListener( 'mouseout', onDocumentMouseOut, false );
+
+				//mouseXOnMouseDown = event.clientX - windowHalfX;
+				//targetRotationOnMouseDown = targetRotation;
+				
+			}
+
+			function onDocumentTouchStart( event ) 
+			{
+			
+				if ( event.touches.length === 1 ) 
+				{
+					for(i = 0; i < 4 ; i++)
+					{
+					
+						//console.log("Scene rendered " + temp);
+						//temp++;
+						// so something moves
+						//scenes[i].children[0].rotation.y = Date.now() * 0.001;
+
+						// get the element that is a place holder for where we want to
+						// draw the scene
+						var element = scenes[i].userData.element;
+
+						// get its position relative to the page's viewport
+						var rect = element.getBoundingClientRect();
+
+
+						if(event.touches[ 0 ].pageX > rect.left && event.touches[ 0 ].pageX < rect.left + rect.width && event.touches[ 0 ].pageY > rect.top &&  event.touches[ 0 ].pageY < rect.top + rect.height )
+						{
+							if(i == 1)
+							{
+								for(i = 0; i < 4; i++)
+								{ 
+
+									//if(groups[i].rotation != defrot)
+									groups[i].rotation.x = Math.PI / 4;
+									groups[i].rotation.y = - Math.PI  * 3/ 4;
+									groups[i].rotation.z = 0;
+									//new TWEEN.Tween( groups[i].rotation ).to( defrot, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+									states[i] = true;
+								}
+							}
+							else if(states[i])
+							{
+								if(i == 0)
+								{
+								new TWEEN.Tween( groups[i].rotation ).to( {  x: Math.PI / 2, y:  - Math.PI / 2}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+								states[i] = false;
+								}
+								if(i == 2)
+								{
+								new TWEEN.Tween( groups[i].rotation ).to( {  x: 0, y:   -Math.PI / 2}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+								states[i] = false;
+								}
+								if(i == 3)
+								{
+								new TWEEN.Tween( groups[i].rotation ).to( {  x: 0, y:  - Math.PI}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+								states[i] = false;
+								}
+							}
+							else
+							{
+								if(i == 0)
+								{
+								new TWEEN.Tween( groups[i].rotation ).to( {  z: groups[i].rotation.z - Math.PI / 2  }, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+								states[i] = false;
+								}
+								if(i == 2)
+								{
+								new TWEEN.Tween( groups[i].rotation ).to( { y: groups[i].rotation.y + Math.PI / 2   }, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+								states[i] = false;
+								}
+								if(i == 3)
+								{
+								new TWEEN.Tween( groups[i].rotation ).to( {  y: groups[i].rotation.y - Math.PI / 2}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+								states[i] = false;
+								}
+							}
+							//new TWEEN.Tween( groups[i].rotation ).to( {  y:  groups[i].rotation.y + (Math.PI / 2)}, 1000 ).easing(  TWEEN.Easing.Quadratic.Out).start();
+						}
+					}
+				}
+			}
+		
+		</script>
+
+	</body>
+</html>
